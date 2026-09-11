@@ -33,7 +33,12 @@ async def _get_session() -> aiohttp.ClientSession:
 def _proxy_data_to_proxy_str(proxy_data: dict | None) -> str | None:
     if not proxy_data:
         return None
-    host = proxy_data.get("host", "")
+    # proxy_url جاهز مباشرة من helpers.parse_proxy_format
+    url = proxy_data.get("proxy_url")
+    if url:
+        return url
+    # fallback
+    host = proxy_data.get("ip") or proxy_data.get("host", "")
     port = proxy_data.get("port", "")
     user = proxy_data.get("username") or proxy_data.get("user", "")
     pwd  = proxy_data.get("password") or proxy_data.get("pass", "")
