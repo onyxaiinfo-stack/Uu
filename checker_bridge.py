@@ -65,18 +65,15 @@ async def check_card_site(
             "error": "no proxy configured",
         }
 
-    params = {
-        "card": cc_str,
-        "url": site_url,
-        "proxy": proxy_str,
-    }
+    # نبني الـ URL يدوياً بدون أي encoding — نفس curl -g
+    url = f"{API_BASE}/check?card={cc_str}&url={site_url}&proxy={proxy_str}"
 
     session = await _get_session()
     try:
         async with session.get(
-            f"{API_BASE}/check",
-            params=params,
+            url,
             ssl=False,
+            allow_redirects=True,
         ) as resp:
             if resp.status != 200:
                 text = await resp.text()
