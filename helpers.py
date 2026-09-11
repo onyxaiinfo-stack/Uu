@@ -134,3 +134,83 @@ def extract_cc(text: str) -> str | None:
 def close_session():
     """Placeholder for session cleanup."""
     pass
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  GATE RESPONSE CLASSIFIER
+# ══════════════════════════════════════════════════════════════════════════════
+
+def classify_gate_response(response_text: str) -> str:
+    """
+    Classify a payment gateway response into a standard status.
+    Returns: 'charged', 'insufficient_funds', 'incorrect_cvc', 'otp_required',
+             'declined', 'expired', 'risky', or 'unknown'
+    """
+    if not response_text:
+        return "unknown"
+
+    r = str(response_text).lower()
+
+    # ── Charged (order placed) ────────────────────────────────────────────
+    if any(k in r for k in [
+        "order_placed", "charged", "success", "thank_you", "thank-you",
+        "order confirmed", "payment complete", "payment successful",
+        "/orders/", "processedreceipt"
+    ]):
+        return "charged"
+
+    # ── Live card signals ─────────────────────────────────────────────────
+    if any(k in r for k in ["insufficient_funds", "insufficient funds"]):
+        return "insufficient_funds"
+
+    if any(k in r for k in [
+        "incorrect_cvc", "incorrect_cvv", "invalid_cvc", "invalid_cvv",
+        "cvv_failed", "cvc_failed", "security code"
+    ]):
+        return "incorrect_cvc"
+
+    if any(k in r for k in ["incorrect_zip", "incorrect zip", "zip failed"]):
+        return "incorrect_zip"
+
+    if any(k in r for k in [
+        "otp_required", "otp required", "3ds", "3d secure",
+        "authentication_required", "action_required", "actionrequiredreceipt"
+    ]):
+        return "otp_required"
+
+    # ── Risky / fraud ─────────────────────────────────────────────────────
+    if any(k in r for k in ["risky", "fraud", "suspected fraud", "risk_rejected"]):
+        return "risky"
+
+    # ── Expired ───────────────────────────────────────────────────────────
+    if any(k in r for k in ["expired", "card_expired", "card expired"]):
+        return "expired"
+
+    # ── Declined ──────────────────────────────────────────────────────────
+    if any(k in r for k in [
+        "declined", "card_declined", "do_not_honor", "do not honor",
+        "transaction not permitted", "invalid card", "lost card",
+        "stolen card", "restricted", "blocked", "payment_failed",
+        "incorrect_number", "invalid_number", "call_issuer", "pick_up_card"
+    ]):
+        return "declined"
+
+    return "unknown"
+
+
+def gate_is_charged(response_text: str) -> bool:
+    """True if the response indicates a successful charge."""
+    return classify_gate_response(response_text) == "charged"
+
+
+def gate_is_approved(response_text: str) -> bool:
+    """
+    True if the card is LIVE (needs 3DS, has insufficient funds,
+    or has incorrect CVC — all of which mean the card is valid).
+    """
+    return classify_gate_response(response_text) in (
+        "otp_required",
+        "incorrect_cvc",
+        "incorrect_zip",
+        "insufficient_funds",
+    )
