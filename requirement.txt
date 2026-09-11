@@ -1,0 +1,16 @@
+# Core Bot Framework
+aiogram==3.4.1
+
+# HTTP Clients
+httpx
+requests
+curl-cffi
+aiohttp
+urllib3
+
+# Payment APIs
+stripe
+
+# Web Scraping (for /dork, /gate)
+beautifulsoup4
+lxml
